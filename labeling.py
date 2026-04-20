@@ -1,48 +1,8 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from scipy.signal import find_peaks
 
 stages = ['Start', 'Rest1', 'City1', 'Hwy1', 'Return', 'Hwy2', 'City2', 'Rest2']
-
-def generate_marker_info(input_dir="./data/drive_csv", output_file="./data/marker_info.csv"):
-    base_path = Path(input_dir).resolve()
-    csv_files = sorted(list(base_path.glob("*.csv")))
-    
-    marker_results = []
-
-    for csv_file in csv_files:
-        try:
-            df = pd.read_csv(csv_file)
-            marker_signal = df['marker-mV'].values
-
-            peaks, _ = find_peaks(
-                marker_signal, 
-                distance=4000,
-                prominence=1
-            )
-
-            drive_info = {'Driver': csv_file.stem}
-            
-            for i in range(len(stages)):
-                if i < len(peaks):
-                    drive_info[stages[i]] = peaks[i]
-                else:
-                    drive_info[stages[i]] = np.nan
-
-            marker_results.append(drive_info)
-
-        except Exception as e:
-            print(f"Lỗi tại file {csv_file.name}: {e}")
-
-    marker_df = pd.DataFrame(marker_results)
-    marker_df = marker_df[['Driver'] + stages]
-    marker_df.to_csv(output_file, index=False)
-    
-    print(f"\nSuccessfully generated {output_file}")
-    return marker_df
-
-marker_info_df = generate_marker_info()
 
 # --- LABEL SAMPLE ---
 def label_samples(df, marker_row):    
@@ -52,30 +12,56 @@ def label_samples(df, marker_row):
         'City1': 'high', 'City2': 'high'
     }
     
-    df['Stress'] = np.nan
+    df['Stress'] = None
     for i in range(len(stages) - 1):
-        s, e = marker_row[stages[i]], marker_row[stages[i+1]]
+        start, end = marker_row[stages[i]], marker_row[stages[i+1]]
         
-        if pd.isna(s) or pd.isna(e): 
+        if pd.isna(start) or pd.isna(end): 
             continue
             
         current_label = label_map.get(stages[i+1])
-        df.loc[int(s)+1 : int(e), 'Stress'] = current_label
+        df.loc[int(start)+1 : int(end), 'Stress'] = current_label
         
     return df.dropna(subset=['Stress']).copy()
 
-def run_sample_labeling(input_dir, marker_csv, output_dir):
+def batch_sample_labeling(input_dir, marker_csv, output_dir):
     markers = pd.read_csv(marker_csv)
+    in_path = Path(input_dir)
     out_path = Path(output_dir)
     out_path.mkdir(parents=True, exist_ok=True)
     
+    print(f"Starting sample-level labeling for {len(markers)} drives...")
+    
     for _, row in markers.iterrows():
-        f_path = Path(input_dir) / f"{row['Driver']}.csv"
+        driver_id = row['Driver']
+        file_name = f"{driver_id}_filtered.csv"
+        file_path = in_path / file_name
         
-        if f_path.exists():
-            df = pd.read_csv(f_path)
+        if not file_path.exists():
+            print(f"    [Skip] File not found: {file_name}")
+            continue
+            
+        try:
+            df = pd.read_csv(file_path)
+            
+            # Apply labeling logic
             df_labeled = label_samples(df, row)
             
-            save_path = out_path / f"{row['Driver']}_labeled.csv"
+            # Save labeled data
+            save_path = out_path / f"{driver_id}_labeled.csv"
             df_labeled.to_csv(save_path, index=False)
-            print(f"Success: {row['Driver']}")
+            
+            # Log distribution for validation
+            label_counts = df_labeled['Stress'].value_counts().to_dict()
+            print(f"    [Done] {driver_id} | Samples: {len(df_labeled)} | Labels: {label_counts}")
+            
+        except Exception as e:
+            print(f"    [Error] Failed to label {driver_id}: {e}")
+
+    print("Sample-level labeling completed.")
+            
+batch_sample_labeling(
+    input_dir="./data/filtered_data",
+    marker_csv="./data/marker_info.csv",
+    output_dir="./data/labeled_samples"
+)
