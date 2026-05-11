@@ -46,7 +46,7 @@ def generate_marker_info(input_dir, output_file):
     Path(output_file).parent.mkdir(parents=True, exist_ok=True)
     marker_df.to_csv(output_file, index=False)
     
-    print(f"\n\tSuccessfully generated {output_file}")
+    print(f"\nSuccess: {output_file}")
     return marker_df
 
 def clean_invalid_drives(marker_df, input_dir):
@@ -83,6 +83,9 @@ def generate_window_map(marker_csv_path, h5_clean_dir, output_csv_path, window_s
     
     window_list = []
     time_cols = list(marker_df.columns[1:])
+    
+    print(f"\n{'='*60}")
+    print("C. Process marker")
 
     for _, row in marker_df.iterrows():
         driver_id = row['Driver']
@@ -98,9 +101,8 @@ def generate_window_map(marker_csv_path, h5_clean_dir, output_csv_path, window_s
                         actual_total_samples = int(len(f['signals']['ECG']) / (fs_ecg / fs))
                     
                     row['Rest2'] = actual_total_samples
-                    print(f"📌 [Auto-Fix] {driver_id}: Đã gán Rest2 = {actual_total_samples} (từ file .h5)")
             else:
-                print(f"⚠️ [Warning] {driver_id}: Thiếu chỉ số Rest2 và không tìm thấy file .h5 để đối chiếu.")
+                print(f"[Warning] {driver_id}: Lack of Rest2 & no .h5 file")
                 continue
 
         total_samples = int(row['Rest2'])
@@ -155,8 +157,13 @@ def generate_window_map(marker_csv_path, h5_clean_dir, output_csv_path, window_s
                 })
                 
     df_windows = pd.DataFrame(window_list)
+    Path(output_csv_path).parent.mkdir(parents=True, exist_ok=True)
     df_windows.to_csv(output_csv_path, index=False)
     print(f"Get window_map.csv: {len(df_windows)} windows.")
+    
+def run():
+    marker_info_df = generate_marker_info(input_dir='./data/parsed_h5', output_file='./data/label/marker_info.csv')
+    generate_window_map('./data/label/marker_info.csv', './data/preprocessed_h5', './data/label/window_map.csv')
     
 if __name__ == "__main__":
     marker_info_df = generate_marker_info(input_dir='./data/parsed_h5', output_file='./data/label/marker_info.csv')

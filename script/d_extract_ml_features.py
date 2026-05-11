@@ -100,7 +100,8 @@ def get_dynamic_multipliers(h5_file_obj, base_fs=15.5):
     return meta_info
 
 def extract_features(map_csv_path, h5_dir, output_csv_path, window_sec=60):
-    print("🚀 Bắt đầu trích xuất đặc trưng ML từ dữ liệu đa tần số...")
+    print(f"\n{'='*60}")
+    print("D. Extract features from signals")
     
     df_map = pd.read_csv(map_csv_path)
     all_features = []
@@ -112,7 +113,7 @@ def extract_features(map_csv_path, h5_dir, output_csv_path, window_sec=60):
         h5_file = h5_path_obj / f"{drive_id}.h5"
         
         if not h5_file.exists():
-            print(f"⚠️ Bỏ qua {drive_id}: Không tìm thấy file {h5_file.name}")
+            print(f"File {h5_file.name} cannot found.")
             continue
             
         with h5py.File(h5_file, 'r') as f:
@@ -174,16 +175,20 @@ def extract_features(map_csv_path, h5_dir, output_csv_path, window_sec=60):
                         feat_dict.update(extract_hr_features(seg))
 
                 except Exception as e:
-                    print(f"❌ Lỗi tại cửa sổ {row['window_id']}: {e}")
+                    print(f"\n[Error] {row['window_id']}: {e}")
                     continue
                 
                 all_features.append(feat_dict)
 
     df_final = pd.DataFrame(all_features)
+    Path(output_csv_path).parent.mkdir(parents=True, exist_ok=True)
     df_final.to_csv(output_csv_path, index=False)
     print(f"\nSuccess: {output_csv_path}")
     print(f"Total: {len(df_final)}")
     print(df_final['label'].value_counts().rename(index={0: 'No Stress (0)', 1: 'Stress (1)'}))
+    
+def run():
+    extract_features("./data/label/window_map.csv", "./data/preprocessed_h5", "./data/extracted_features/ml_features_dataset.csv")
 
 if __name__ == "__main__":  
     extract_features("./data/label/window_map.csv", "./data/preprocessed_h5", "./data/extracted_features/ml_features_dataset.csv")

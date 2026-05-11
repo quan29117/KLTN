@@ -67,8 +67,7 @@ def get_ml_model(model_type):
 
 def evaluate_ml_pipeline(csv_path, model_type="rf"):
     print(f"\n{'='*60}")
-    print(f"📊 ĐANG ĐÁNH GIÁ MÔ HÌNH ML: {model_type.upper()}")
-    print(f"{'='*60}")
+    print(f"E. First layer - YES / NO Stressed with {model_type.upper()}")
     
     df = pd.read_csv(csv_path)
     df = clean_feature_matrix(df)
@@ -87,8 +86,8 @@ def evaluate_ml_pipeline(csv_path, model_type="rf"):
     metrics_list = []
     accumulated_cm = np.zeros((2, 2), dtype=int)
     
-    print(f"Tổng số mẫu: {len(df)} | Số đặc trưng: {len(feature_cols)}")
-    print(f"Phân phối nhãn: {dict(pd.Series(y).value_counts().rename(index={0:'No Stress', 1:'Stress'}))}\n")
+    print(f"Total: {len(df)} | No of extracted features: {len(feature_cols)}")
+    print(f"Label distribution: {dict(pd.Series(y).value_counts().rename(index={0:'No Stress', 1:'Stress'}))}\n")
 
     for i, (train_idx, test_idx) in enumerate(logo.split(X, y, groups)):
         X_train, X_test = X[train_idx], X[test_idx]
@@ -124,11 +123,9 @@ def evaluate_ml_pipeline(csv_path, model_type="rf"):
         print(f"Fold {i+1:02d} | Test: {test_drive:10} | Acc: {acc:.4f} | Sens: {rec:.4f} | F1: {f1:.4f}")
 
     results_df = pd.DataFrame(metrics_list)
-    print("\n" + "-"*80)
-    print("📈 KẾT QUẢ TRUNG BÌNH (CROSS-VALIDATION)")
-    print("-" * 80)
+    print("-" * 60)
     print(results_df[['Accuracy', 'Recall (Sens)', 'F1_Score']].mean().to_string())
-    print("-" * 80)
+    print("-" * 60)
     
     plot_confusion_matrix(accumulated_cm)
     
@@ -138,11 +135,14 @@ def plot_confusion_matrix(cm):
     plt.figure(figsize=(8, 7))
     labels = ['Relax (0)', 'Stress (1)']
     sns.heatmap(cm, annot=True, fmt='d', cmap='Reds', xticklabels=labels, yticklabels=labels)
-    plt.title('Accumulated Confusion Matrix (3-Class LODO)', fontweight='bold', pad=20)
+    plt.title('Accumulated Confusion Matrix', fontweight='bold', pad=20)
     plt.ylabel('True Label', fontweight='bold')
     plt.xlabel('Predicted Label', fontweight='bold')
     plt.tight_layout()
     plt.show()
+    
+def run():
+    ml_results = evaluate_ml_pipeline("./data/extracted_features/ml_features_dataset.csv", model_type="rf")
 
 if __name__ == "__main__":
     ml_results = evaluate_ml_pipeline("./data/extracted_features/ml_features_dataset.csv", model_type="rf")

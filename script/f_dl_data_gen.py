@@ -36,6 +36,9 @@ def create_binary_stress_map(window_map_csv, output_csv=None):
     return output_df
 
 def prepare_multibranch_dataset(window_map, h5_dir, output_file):
+    print(f"\n{'='*60}")
+    print("F. Second layer - High / Medium Stress")
+    
     df = create_binary_stress_map(window_map)
     
     sensor_config = {
@@ -49,8 +52,6 @@ def prepare_multibranch_dataset(window_map, h5_dir, output_file):
     
     branch_data = {sensor: [] for sensor in sensor_config.keys()}
     labels = []
-
-    print("🚀 Bắt đầu trích xuất dữ liệu đa nhánh...")
 
     for i, row in df.iterrows():
         drive_id = row['drive_id']
@@ -85,12 +86,14 @@ def prepare_multibranch_dataset(window_map, h5_dir, output_file):
 
     final_output = {sensor: np.array(data) for sensor, data in branch_data.items()}
     final_output['labels'] = np.array(labels, dtype=np.int8)
-
-    print(f"\n💾 Đang nén dữ liệu vào {output_file}...")
-    
+        
     output_path = Path(output_file)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(output_file, **final_output)
+    
+    print(f"\nSuccess: {output_file}")
 
+def run():
+    prepare_multibranch_dataset('./data/label/window_map.csv', './data/preprocessed_h5', './data/dl_data/dl_data.npz')
 
 prepare_multibranch_dataset('./data/label/window_map.csv', './data/preprocessed_h5', './data/dl_data/dl_data.npz')

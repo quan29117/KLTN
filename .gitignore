@@ -7,3 +7,6 @@ data/label
 data/parsed_h5
 data/preprocessed_h5
 data/extracted_features
+
+script/__**__
+script/__**__.**

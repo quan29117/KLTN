@@ -85,12 +85,18 @@ def process_all_drives(raw_dir, output_dir):
     
     hea_files = sorted(raw_path.glob("*.hea"))
     success = 0
+    
+    print(f"\n{'='*60}")
+    print("A. Read data")
     for hea_f in tqdm(hea_files):
         record = hea_f.stem
         if process_single_drive(raw_path / f"{record}.hea", raw_path / f"{record}.dat", output_path / f"{record}.h5"):
             success += 1
             
     print(f"\nSummary: Success {success}, Failed {len(hea_files)-success}")
+    
+def run():
+    process_all_drives("./data/raw", "./data/parsed_h5")
 
 if __name__ == "__main__":
     process_all_drives("./data/raw", "./data/parsed_h5")

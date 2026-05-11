@@ -110,7 +110,9 @@ def preprocess_all_drives(input_dir="parsed_h5", output_dir="preprocessed_h5"):
     os.makedirs(output_dir, exist_ok=True)
     
     h5_files = sorted([f for f in os.listdir(input_dir) if f.endswith(".h5")])
-    print(f"Preprocess: {len(h5_files)} files...")
+    
+    print(f"\n{'='*60}")
+    print("B. Preprocess data")
 
     success = 0
     
@@ -124,9 +126,12 @@ def preprocess_all_drives(input_dir="parsed_h5", output_dir="preprocessed_h5"):
             preprocess_single_drive(input_path, output_path)
             success += 1
         except Exception as e:
-            print(f"\n\t[ERROR] {h5_file}: {e}")
+            print(f"\n[Error] {h5_file}: {e}")
 
-    print(f"\tSuccess: {success}/{len(h5_files)}")
+    print(f"Success: {success}/{len(h5_files)}")
+    
+def run():
+    preprocess_all_drives(input_dir="./data/parsed_h5", output_dir="./data/preprocessed_h5")
 
 if __name__ == "__main__":
     preprocess_all_drives(input_dir="./data/parsed_h5", output_dir="./data/preprocessed_h5")
