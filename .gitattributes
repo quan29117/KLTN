@@ -1,1 +1,2 @@
+*.npz filter=lfs diff=lfs merge=lfs -text
 data/dl_data/dl_data.npz filter=lfs diff=lfs merge=lfs -text
