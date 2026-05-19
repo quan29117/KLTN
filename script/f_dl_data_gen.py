@@ -95,5 +95,3 @@ def prepare_multibranch_dataset(window_map, h5_dir, output_file):
 
 def run():
     prepare_multibranch_dataset('./data/label/window_map.csv', './data/preprocessed_h5', './data/dl_data/dl_data.npz')
-
-prepare_multibranch_dataset('./data/label/window_map.csv', './data/preprocessed_h5', './data/dl_data/dl_data.npz')
