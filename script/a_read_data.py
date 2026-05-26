@@ -23,7 +23,7 @@ def validate_drive(available_signals):
     available_lower = [s.lower() for s in available_signals]
     missing = [req for req in REQUIRED_SIGNALS if not any(req.lower() in s for s in available_lower)]
     
-    return len(missing) == 0, missing
+    return len(missing) == 0
 
 def parse_header(hea_path):
     with open(hea_path, "r") as f:
@@ -31,12 +31,26 @@ def parse_header(hea_path):
     first = lines[0].split()
     record_name, base_fs, n_frames = first[0], float(first[2]), int(first[3])
     signals = []
+    
     for line in lines[1:]:
         parts = line.split()
-        multi = int(re.search(r"x(\d+)", parts[1]).group(1)) if "x" in parts[1] else 1
+        
+        gain_str = parts[2]
+        format_str = parts[1]
+        multi = 1
+        
+        if "x" in format_str:
+            match = re.search(r"x(\d+)", format_str)
+            if match:
+                multi = int(match.group(1))
+                
+        signal_name = " ".join(parts[8:]) if len(parts) > 8 else parts[-1]
+        
         signals.append({
-            "gain": parts[2], "name": " ".join(parts[8:]) if len(parts) > 8 else parts[-1],
-            "spf": multi, "fs": base_fs * multi
+            "gain": gain_str, 
+            "name": signal_name,
+            "spf": multi, 
+            "fs": base_fs * multi
         })
         
     return {"record": record_name, "base_fs": base_fs, "n_frames": n_frames, "signals": signals}
@@ -48,8 +62,13 @@ def read_dat(dat_path, header):
     
     for s in header["signals"]:
         sig = raw[:, idx:idx+s["spf"]].reshape(-1).astype(np.float32)
-        try: sig /= float(s["gain"])
-        except: pass
+        try:
+            gain_val = float(s["gain"])
+            if gain_val != 0.0:
+                sig /= gain_val
+        except ValueError:
+            pass
+        
         output[s["name"]] = {"fs": s["fs"], "signal": sig}
         idx += s["spf"]
         
@@ -68,13 +87,15 @@ def save_to_hdf5(output_path, record_name, normalized_map, parsed_signals):
 def process_single_drive(hea_path, dat_path, output_path):
     h = parse_header(hea_path)
     sig_names = [s["name"] for s in h["signals"]]
-    ok, missing = validate_drive(sig_names)
     
-    if not ok:
+    if not validate_drive(sig_names):
         return False
     
-    n_map = {n: o for n, o in zip(normalize_column_names(sig_names), sig_names)}
-    save_to_hdf5(output_path, h["record"], n_map, read_dat(dat_path, h))
+    normalized_names = normalize_column_names(sig_names)
+    signal_mapping = dict(zip(normalized_names, sig_names))
+    parsed_data = read_dat(dat_path, h)
+
+    save_to_hdf5(output_path, h["record"], signal_mapping, parsed_data)
     
     return True
 
@@ -96,7 +117,7 @@ def process_all_drives(raw_dir, output_dir):
     print(f"\nSummary: Success {success}, Failed {len(hea_files)-success}")
     
 def run():
-    process_all_drives("./data/raw", "./data/parsed_h5")
+    process_all_drives(raw_dir="./data/raw", output_dir="./data/drive_h5")
 
 if __name__ == "__main__":
-    process_all_drives("./data/raw", "./data/parsed_h5")
+    process_all_drives(raw_dir="./data/raw", output_dir= "./data/drive_h5")

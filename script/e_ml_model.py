@@ -56,15 +56,15 @@ def get_ml_model(model_type):
     if model_type == "rf":
         return RandomForestClassifier(n_estimators=110, criterion='entropy', random_state=1, class_weight='balanced', n_jobs=-1)
     elif model_type == "svm":
-        return SVC(C=2, kernel='rbf', class_weight='balanced', probability=True)
+        return SVC(C=2, kernel='rbf', cache_size=200, tol=0.001, class_weight='balanced', probability=True)
     elif model_type == "knn":
-        return KNeighborsClassifier(n_neighbors=5, weights='uniform')
+        return KNeighborsClassifier(n_neighbors=5, leaf_size=30, metric='minkowski', weights='uniform')
     elif model_type == "dt":
-        return DecisionTreeClassifier(criterion='gini', class_weight='balanced', random_state=1)
+        return DecisionTreeClassifier(criterion='gini', min_samples_leaf=1, min_samples_split=2, splitter='best', class_weight='balanced', random_state=1)
     elif model_type == "lr":
-        return LogisticRegression(C=1, solver='lbfgs', max_iter=1000, class_weight='balanced')
+        return LogisticRegression(C=1, solver='lbfgs', tol=0.0001, max_iter=1000, class_weight='balanced')
     elif model_type == "mlp":
-        return MLPClassifier(hidden_layer_sizes=(50,), activation='relu', solver='adam', max_iter=1000, random_state=1)
+        return MLPClassifier(hidden_layer_sizes=(50,), activation='relu', momentum=0.9, solver='adam', max_iter=1000, random_state=1)
 
 def evaluate_ml_pipeline(csv_path, model_type="rf", use_norm=True):
     norm_status = "WITH_NORM" if use_norm else "WITHOUT_NORM"
@@ -218,9 +218,3 @@ if __name__ == "__main__":
     
     metrics_without_norm = evaluate_ml_pipeline(FEATURES_CSV, model_type="rf", use_norm=False)
     metrics_with_norm = evaluate_ml_pipeline(FEATURES_CSV, model_type="rf", use_norm=True)
-    
-    plot_normalization_comparison(
-        with_norm_df=metrics_with_norm, 
-        without_norm_df=metrics_without_norm, 
-        save_path=f"./result/comparison_rf.png"
-    )

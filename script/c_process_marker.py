@@ -162,9 +162,13 @@ def generate_window_map(marker_csv_path, h5_clean_dir, output_csv_path, window_s
     print(f"Get window_map.csv: {len(df_windows)} windows.")
     
 def run():
-    marker_info_df = generate_marker_info(input_dir='./data/parsed_h5', output_file='./data/label/marker_info.csv')
-    generate_window_map('./data/label/marker_info.csv', './data/preprocessed_h5', './data/label/window_map.csv')
+    marker_info_df = generate_marker_info(input_dir="./data/drive_h5", output_file="./data/label/marker_info.csv")
+    generate_window_map(marker_csv_path="./data/label/marker_info.csv",
+                        h5_clean_dir="./data/preprocessed_h5",
+                        output_csv_path="./data/label/window_map.csv")
     
 if __name__ == "__main__":
-    marker_info_df = generate_marker_info(input_dir='./data/parsed_h5', output_file='./data/label/marker_info.csv')
-    generate_window_map('./data/label/marker_info.csv', './data/preprocessed_h5', './data/label/window_map.csv')
+    marker_info_df = generate_marker_info(input_dir="./data/drive_h5", output_file="./data/label/marker_info.csv")
+    generate_window_map(marker_csv_path="./data/label/marker_info.csv",
+                        h5_clean_dir="./data/preprocessed_h5",
+                        output_csv_path="./data/label/window_map.csv")

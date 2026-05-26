@@ -188,7 +188,11 @@ def extract_features(map_csv_path, h5_dir, output_csv_path, window_sec=60):
     print(df_final['label'].value_counts().rename(index={0: 'No Stress (0)', 1: 'Stress (1)'}))
     
 def run():
-    extract_features("./data/label/window_map.csv", "./data/preprocessed_h5", "./data/extracted_features/ml_features_dataset.csv")
+    extract_features(map_csv_path="./data/label/window_map.csv",
+                     h5_dir="./data/preprocessed_h5",
+                     output_csv_path="./data/extracted_features/ml_features_dataset.csv")
 
 if __name__ == "__main__":  
-    extract_features("./data/label/window_map.csv", "./data/preprocessed_h5", "./data/extracted_features/ml_features_dataset.csv")
+    extract_features(map_csv_path="./data/label/window_map.csv",
+                     h5_dir="./data/preprocessed_h5",
+                     output_csv_path="./data/extracted_features/ml_features_dataset.csv")

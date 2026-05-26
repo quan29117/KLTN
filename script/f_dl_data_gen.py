@@ -35,9 +35,9 @@ def create_binary_stress_map(window_map_csv, output_csv=None):
 
     return output_df
 
-def prepare_multibranch_dataset(window_map, h5_dir, output_file):
+def prepare_training_data(window_map, h5_dir, output_npz_path):
     print(f"\n{'='*60}")
-    print("F. Second layer - High / Medium Stress")
+    print("F. Prepare data for training Second Layer")
     
     df = create_binary_stress_map(window_map)
     
@@ -52,24 +52,27 @@ def prepare_multibranch_dataset(window_map, h5_dir, output_file):
     
     branch_data = {sensor: [] for sensor in sensor_config.keys()}
     labels = []
-
+    driver_groups = [] 
+    
     for i, row in df.iterrows():
         drive_id = row['drive_id']
         start_15_5 = int(row['start_idx_15_5Hz'])
+        
         labels.append(row['binary_label'])
+        driver_groups.append(drive_id) 
         
         h5_f = Path(h5_dir) / f"{drive_id}.h5"
 
         with h5py.File(h5_f, 'r') as f:
             for sensor, config in sensor_config.items():
-                fs_actual = f[f'meta/fs/{sensor}'][0]
+                fs_actual = config['base_fs']
                 
                 scale_factor = fs_actual / 15.5
                 actual_start = int(start_15_5 * scale_factor)
                 expected_samples = int(60 * fs_actual)
                 
                 raw_sig = f[f'signals/{sensor}'][actual_start : actual_start + expected_samples].flatten()
-                
+
                 if len(raw_sig) > 0:
                     mean_val = np.mean(raw_sig)
                     std_val = np.std(raw_sig) + 1e-8
@@ -78,20 +81,22 @@ def prepare_multibranch_dataset(window_map, h5_dir, output_file):
                     norm_sig = np.zeros((expected_samples,))
 
                 padded_sig = np.zeros(config['target_len'], dtype=np.float32)
-                
                 actual_len = min(len(norm_sig), config['target_len'])
                 padded_sig[:actual_len] = norm_sig[:actual_len]
                 
                 branch_data[sensor].append(padded_sig.reshape(-1, 1))
 
-    final_output = {sensor: np.array(data) for sensor, data in branch_data.items()}
+    final_output = {sensor: np.array(data, dtype=np.float32) for sensor, data in branch_data.items()}
     final_output['labels'] = np.array(labels, dtype=np.int8)
+    final_output['driver_groups'] = np.array(driver_groups).astype(str)
         
-    output_path = Path(output_file)
+    output_path = Path(output_npz_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(output_file, **final_output)
+    np.savez_compressed(output_npz_path, **final_output)
     
-    print(f"\nSuccess: {output_file}")
+    print(f"\nSuccess: {output_npz_path}")
 
 def run():
-    prepare_multibranch_dataset('./data/label/window_map.csv', './data/preprocessed_h5', './data/dl_data/dl_data.npz')
+    prepare_training_data(window_map='./data/label/window_map.csv',
+                          h5_dir='./data/preprocessed_h5',
+                          output_npz_path='./data/dl_data/dl_data.npz')

@@ -1,12 +1,17 @@
 import h5py
-import os
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import butter, filtfilt, firwin
 from scipy.ndimage import gaussian_filter1d
 from tqdm import tqdm
+from pathlib import Path
 
 def butter_bandpass(signal, fs, low=5, high=15, order=4):
+    """
+    Adapted from SciPy Cookbook:
+    https://scipy-cookbook.readthedocs.io/items/ButterworthBandpass.html
+    """
+    
     nyquist = 0.5 * fs
     low = low / nyquist 
     high = high / nyquist 
@@ -15,25 +20,22 @@ def butter_bandpass(signal, fs, low=5, high=15, order=4):
     return filtfilt(b_butter, a_butter, signal)
 
 def butter_lowpass(signal, fs, cutoff=4.0, order=4):
+    """
+    Adapted from SciPy Cookbook:
+    https://scipy-cookbook.readthedocs.io/items/ButterworthBandpass.html
+    """
+    
     nyquist = 0.5 * fs
     normal_cutoff = cutoff / nyquist
     b_butter, a_butter = butter(order, normal_cutoff, btype='low', analog=False)
     
     return filtfilt(b_butter, a_butter, signal)
 
-def fir_notch_filter(signal, fs, low=59.0, high=61.0, numtaps=101):
+def fir_bandpass(signal, fs, low=1.5, high=150, numtaps=101):
     nyquist = 0.5 * fs
     low = low / nyquist 
     high = high / nyquist
     taps = firwin(numtaps, [low, high], pass_zero=False)
-    
-    return filtfilt(taps, [1.0], signal)
-
-def fir_bandpass(signal, fs, low=1.5, high=150, numtaps=101):
-    nyquist = 0.5 * fs
-    taps = firwin(numtaps,
-                  [low / nyquist, high / nyquist],
-                  pass_zero=False)
     
     return filtfilt(taps, [1.0], signal)
 
@@ -51,6 +53,16 @@ def max_normalize(signal):
     return signal / max_val
 
 def filter_ecg(ecg_signal, fs):
+    """
+    1. Butterworth bandpass filter
+       Adapted from:
+       https://doi.org/10.1145/3186585
+
+    2. FIR bandpass filter & Min-max normalization
+       Adapted from:
+       https://doi.org/10.3390/diagnostics13111897
+    """
+    
     ecg_signal = butter_bandpass(ecg_signal, fs, low=5, high=15)
     ecg_signal = fir_bandpass(ecg_signal, fs, low=1.5, high=150)
     ecg_signal = min_max_normalize(ecg_signal)
@@ -58,6 +70,12 @@ def filter_ecg(ecg_signal, fs):
     return ecg_signal
 
 def filter_gsr(gsr_signal, fs):
+    """
+    1. Butterworth lowpass & Gaussian filter
+       Adapted from:
+       https://doi.org/10.1016/j.bspc.2021.103203
+    """
+    
     gsr_signal = butter_lowpass(gsr_signal, fs, cutoff=4.0)
     gsr_signal = gaussian_filter1d(gsr_signal, sigma=2)
     gsr_signal = max_normalize(gsr_signal)
@@ -65,6 +83,11 @@ def filter_gsr(gsr_signal, fs):
     return gsr_signal
 
 def filter_resp(resp_signal, fs):
+    """
+    1. Butterworth bandpass filter
+       Adapted from:
+       https://doi.org/10.3390/diagnostics13111897       
+    """
     resp_signal = butter_bandpass(resp_signal, fs, low=0.05, high=0.70)
     
     return resp_signal
@@ -107,23 +130,23 @@ def preprocess_single_drive(input_path, output_path):
     return True
 
 def preprocess_all_drives(input_dir="parsed_h5", output_dir="preprocessed_h5"):
-    os.makedirs(output_dir, exist_ok=True)
+    in_path = Path(input_dir)
+    out_path = Path(output_dir)
     
-    h5_files = sorted([f for f in os.listdir(input_dir) if f.endswith(".h5")])
+    out_path.mkdir(parents=True, exist_ok=True)
+    
+    h5_files = sorted(in_path.glob("*.h5"))
     
     print(f"\n{'='*60}")
     print("B. Preprocess data")
 
     success = 0
     
-    for h5_file in tqdm(h5_files, desc="Processing Drives", disable=True):
-        input_path = os.path.join(input_dir, h5_file)
-        
-        clean_filename = h5_file.replace(".h5", "_preprocessed.h5")
-        output_path = os.path.join(output_dir, h5_file)
+    for h5_file in tqdm(h5_files, desc="Processing Drives"):
+        output_file_path = out_path / h5_file.name
         
         try:
-            preprocess_single_drive(input_path, output_path)
+            preprocess_single_drive(h5_file, output_file_path)
             success += 1
         except Exception as e:
             print(f"\n[Error] {h5_file}: {e}")
@@ -131,7 +154,7 @@ def preprocess_all_drives(input_dir="parsed_h5", output_dir="preprocessed_h5"):
     print(f"Success: {success}/{len(h5_files)}")
     
 def run():
-    preprocess_all_drives(input_dir="./data/parsed_h5", output_dir="./data/preprocessed_h5")
+    preprocess_all_drives(input_dir="./data/drive_h5", output_dir="./data/preprocessed_h5")
 
 if __name__ == "__main__":
-    preprocess_all_drives(input_dir="./data/parsed_h5", output_dir="./data/preprocessed_h5")
+    preprocess_all_drives(input_dir="./data/drive_h5", output_dir="./data/preprocessed_h5")
