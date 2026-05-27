@@ -100,8 +100,6 @@ def preprocess_single_drive(input_path, output_path):
         
         if "record_name" in h5_in["meta"]:
             meta_group.create_dataset("record_name", data=h5_in["meta"]["record_name"][()])
-        if "original_signal_names" in h5_in["meta"]:
-            meta_group.create_dataset("original_signal_names", data=h5_in["meta"]["original_signal_names"][()])
 
         for sig_name in h5_in['signals'].keys():
             raw_data = h5_in['signals'][sig_name][:]

@@ -7,8 +7,8 @@ from scipy.signal import find_peaks
 stages = ['Start', 'Rest1', 'City1', 'Hwy1', 'Return', 'Hwy2', 'City2', 'Rest2']
 
 def generate_marker_info(input_dir, output_file):
-    base_path = Path(input_dir).resolve()
-    h5_files = sorted(list(base_path.glob("*.h5")))
+    in_path = Path(input_dir).resolve()
+    h5_files = sorted(list(in_path.glob("*.h5")))
     
     marker_results = []
 
@@ -50,10 +50,10 @@ def generate_marker_info(input_dir, output_file):
     return marker_df
 
 def clean_invalid_drives(marker_df, input_dir):
-    """
+    '''
     Identifies drives with insufficient markers (< 5) and deletes 
     their corresponding CSV files to ensure data consistency.
-    """
+    '''
     stage_cols = [col for col in marker_df.columns if col != 'Driver']
     
     invalid_rows = marker_df[marker_df[stage_cols].count(axis=1) < 5]
@@ -76,7 +76,7 @@ def clean_invalid_drives(marker_df, input_dir):
 
     return marker_df[marker_df[stage_cols].count(axis=1) >= 5].copy()
 
-def generate_window_map(marker_csv_path, h5_clean_dir, output_csv_path, window_sec=60, overlap_sec=30, fs=15.5, purity_threshold=0.8):
+def generate_window_map(marker_csv_path, h5_clean_dir, output_path, window_sec=60, overlap_sec=30, fs=15.5, purity_threshold=0.8):
     marker_df = pd.read_csv(marker_csv_path)
     window_size = int(window_sec * fs)
     step_size = int((window_sec - overlap_sec) * fs)
@@ -157,18 +157,18 @@ def generate_window_map(marker_csv_path, h5_clean_dir, output_csv_path, window_s
                 })
                 
     df_windows = pd.DataFrame(window_list)
-    Path(output_csv_path).parent.mkdir(parents=True, exist_ok=True)
-    df_windows.to_csv(output_csv_path, index=False)
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    df_windows.to_csv(output_path, index=False)
     print(f"Get window_map.csv: {len(df_windows)} windows.")
     
 def run():
     marker_info_df = generate_marker_info(input_dir="./data/drive_h5", output_file="./data/label/marker_info.csv")
     generate_window_map(marker_csv_path="./data/label/marker_info.csv",
                         h5_clean_dir="./data/preprocessed_h5",
-                        output_csv_path="./data/label/window_map.csv")
+                        output_path="./data/label/window_map.csv")
     
 if __name__ == "__main__":
     marker_info_df = generate_marker_info(input_dir="./data/drive_h5", output_file="./data/label/marker_info.csv")
     generate_window_map(marker_csv_path="./data/label/marker_info.csv",
                         h5_clean_dir="./data/preprocessed_h5",
-                        output_csv_path="./data/label/window_map.csv")
+                        output_path="./data/label/window_map.csv")

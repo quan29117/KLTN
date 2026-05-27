@@ -3,6 +3,8 @@ venv/
 test.py
 test.ipynb
 
+img/
+
 data/label
 data/parsed_h5
 data/preprocessed_h5

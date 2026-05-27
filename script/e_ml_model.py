@@ -28,10 +28,10 @@ def clean_feature_matrix(df):
     return df_clean
 
 def apply_subject_normalization(df):
-    """
+    '''
     Chuẩn hóa đặc trưng theo từng Driver.
     Lấy giá trị hiện tại trừ đi trung bình của giai đoạn Rest1 của chính Driver đó.
-    """
+    '''
     normalized_dfs = []
     
     for drive_id, group in df.groupby('drive_id'):
@@ -142,6 +142,9 @@ def evaluate_ml_pipeline(csv_path, model_type="rf", use_norm=True):
     return results_df
 
 def plot_confusion_matrix(cm, output):
+    '''
+    Vẽ ma trận nhầm lẫn để đánh giá mô hình tầng 1
+    '''
     plt.figure(figsize=(8, 8))
     labels = ['Stress (1)', 'Relax (0)']
     ax = sns.heatmap(cm, annot=True, fmt='d', cmap='Reds', xticklabels=labels, yticklabels=labels, annot_kws={"size": 28, "weight": "bold"}, cbar=False)
@@ -163,9 +166,9 @@ def plot_confusion_matrix(cm, output):
     plt.close()
     
 def plot_normalization_comparison(with_norm_df, without_norm_df, save_path="./result/norm_comparison.png"):
-    """
+    '''
     Vẽ biểu đồ cột nhóm so sánh chi tiết các thông số từ 2 kết quả DataFrame (with_norm và without_norm).
-    """
+    '''
     metrics_labels = ['Accuracy', 'Sensitivity\n(Recall)', 'Precision', 'Specificity', 'F1-Score']
     keys = ['Accuracy', 'Recall (Sens)', 'Precision', 'Specificity', 'F1_Score']
     
